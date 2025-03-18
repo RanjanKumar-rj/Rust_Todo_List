@@ -1,5 +1,10 @@
 use std::io;
 
+struct Task{
+    name: String,
+    done: bool,
+}
+
 fn get_input() -> i32 {
     let mut input = String::new();
     io::stdin()
