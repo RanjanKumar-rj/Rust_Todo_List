@@ -1,62 +1,68 @@
-use rusqlite::Connection;
-use std::io;
+use clap::{Parser, Subcommand};
+use rusqlite::Result;
 
 mod db;
 use db::*;
 
-fn get_input() -> String {
-    let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Error while taking input from user");
-    input
+#[derive(Parser)]
+#[command(name = "todo")]
+#[command(about = "A simple CLI Todo App", version = "1.0")]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
 }
 
-fn add_todo(conn: &Connection) {
-    println!("Enter your task : ");
-    let task = get_input().trim().to_owned();
-    let _ = insert_task(conn, &task);
+#[derive(Subcommand)]
+enum Commands {
+    /// Initialize the database
+    Init,
+
+    /// Add a new todo task
+    Add {
+        #[arg(short, long)]
+        task: String,
+    },
+
+    /// List all todo tasks
+    List,
+
+    /// Mark a task as done
+    Done {
+        #[arg(short, long)]
+        id: i32,
+    },
+
+    /// Delete a task
+    Delete {
+        #[arg(short, long)]
+        id: i32,
+    },
 }
 
-fn list_todo(conn: &Connection) {
-    let _ =fetch_tasks(conn);
-}
-
-fn mark_as_done(conn: &Connection) {
-    println!("Enter task's index : ");
-    let index = get_input()
-        .trim()
-        .parse::<i32>()
-        .expect("Unable to parse input to usize");
-    let _ = mark_task_done(conn, index);
-}
-
-fn main() {
+fn main() -> Result<()> {
     println!("Welcome to Todo App");
-    let conn = create_db().expect("Error while creating database");
 
-    loop {
-        println!("\n1. Add Todo");
-        println!("2. List Todo");
-        println!("3. Mark as done");
-        println!("4. Exit");
-        println!("Enter your choice : ");
+    let cli = Cli::parse();
 
-        let choice = get_input()
-            .trim()
-            .parse::<u8>()
-            .expect("Unable to parse input to usize");
-
-        match choice {
-            1 => add_todo(&conn),
-            2 => list_todo(&conn),
-            3 => mark_as_done(&conn),
-            4 => {
-                println!("Thanks for using Todo App");
-                break;
-            }
-            _ => println!("Invalid choice"),
+    match &cli.command {
+        Commands::Init => {
+            create_db()?;
+        }
+        Commands::Add { task } => {
+            insert_task(task)?;
+        }
+        Commands::List => {
+            fetch_tasks()?;
+        }
+        Commands::Done { id } => {
+            mark_task_done(*id)?;
+            println!("Task {} marked as done!", *id);
+        }
+        Commands::Delete { id } => {
+            delete_task(*id)?;
+            println!("Task {} deleted!", id);
         }
     }
 
+    Ok(())
 }

@@ -16,7 +16,8 @@ pub fn create_db() -> Result<Connection> {
     Ok(conn)
 }
 
-pub fn insert_task(conn: &Connection, task: &str) -> Result<()> {
+pub fn insert_task(task: &str) -> Result<()> {
+    let conn = Connection::open("todo.db")?;
     conn.execute(
         "INSERT INTO todo (task, done) VALUES (?1, 0)", // Default done = 0 (not completed)
         params![task],
@@ -26,7 +27,8 @@ pub fn insert_task(conn: &Connection, task: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn fetch_tasks(conn: &Connection) -> Result<()> {
+pub fn fetch_tasks() -> Result<()> {
+    let conn = Connection::open("todo.db")?;
     let mut stmt = conn.prepare("SELECT id, task, done FROM todo")?;
     let tasks_iter = stmt.query_map([], |row| {
         Ok((
@@ -49,14 +51,22 @@ pub fn fetch_tasks(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-pub fn mark_task_done(conn: &Connection, id: i32) -> Result<()> {
+pub fn mark_task_done(id: i32) -> Result<()> {
+    let conn = Connection::open("todo.db")?;
     conn.execute("UPDATE todo SET done = 1 WHERE id = ?1", params![id])?;
 
-    println!("Task marked as done!");
     Ok(())
 }
 
-// pub fn update_task(conn: &Connection, id: i32, new_task: &str, done: bool) -> Result<()> {
+pub fn delete_task(id: i32) -> Result<()> {
+    let conn = Connection::open("todo.db")?;
+    conn.execute("DELETE FROM todo WHERE id = ?1", params![id])?;
+
+    Ok(())
+}
+
+// pub fn update_task(id: i32, new_task: &str, done: bool) -> Result<()> {
+//     let conn = Connection::open("todo.db")?;
 //     let done_value = if done { 1 } else { 0 }; // Convert `bool` to `INTEGER`
 
 //     conn.execute(
@@ -65,13 +75,5 @@ pub fn mark_task_done(conn: &Connection, id: i32) -> Result<()> {
 //     )?;
 
 //     println!("Task updated successfully!");
-//     Ok(())
-// }
-
-// pub fn delete_task(conn: &Connection, id: i32) -> Result<()> {
-
-//     conn.execute("DELETE FROM todo WHERE id = ?1", params![id])?;
-
-//     println!("Task deleted successfully!");
 //     Ok(())
 // }
